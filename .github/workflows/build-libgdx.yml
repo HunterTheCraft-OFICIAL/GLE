@@ -1,0 +1,54 @@
+name: 🎮 Build LibGDX Road MVP
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Permite executar manualmente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: 🔧 Grant execute permission for gradlew
+        run: chmod +x libgdx-kotlin-road-mvp/gradlew
+
+      - name: 📦 Download Dependencies & Build
+        run: |
+          cd libgdx-kotlin-road-mvp
+          ./gradlew --no-daemon build
+
+      - name: 🏗️ Build Desktop JAR
+        run: |
+          cd libgdx-kotlin-road-mvp
+          ./gradlew --no-daemon jar
+
+      - name: 📤 Upload Desktop JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: road-mvp-desktop
+          path: libgdx-kotlin-road-mvp/build/libs/*.jar
+          retention-days: 30
+
+      - name: ✅ Build Summary
+        run: |
+          echo "## 🎉 Build Concluído com Sucesso!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Projeto:** LibGDX Kotlin Road MVP" >> $GITHUB_STEP_SUMMARY
+          echo "**Java Version:** 17" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** road-mvp-desktop.jar" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Arquivos Gerados:" >> $GITHUB_STEP_SUMMARY
+          ls -lh libgdx-kotlin-road-mvp/build/libs/*.jar >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Nenhum JAR encontrado" >> $GITHUB_STEP_SUMMARY
