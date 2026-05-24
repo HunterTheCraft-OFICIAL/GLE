@@ -1,78 +1,53 @@
-name: Sync from Source
+name: 🔄 Sync Repositórios
 
 on:
-  workflow_dispatch:
-    inputs:
-      message:
-        description: 'Custom commit message'
-        required: false
-        default: 'Automated sync from source'
+  workflow_dispatch:  # Permite executar manualmente na aba Actions
+  schedule:
+    - cron: '0 */6 * * *'  # Executa a cada 6 horas (ajuste conforme necessário)
 
 permissions:
-  contents: write
+  contents: write  # Necessário para o bot fazer push
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: 📥 Checkout do repositório destino
+        uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Configure Git user
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: 📦 Clonar repositório de origem
+        run: git clone --depth 1 https://github.com/HunterTheCraft-OFICIAL/openttd-android-Mobile-Android-.git /tmp/source_repo
 
-      - name: Sync code
-        id: sync
+      - name: 🔄 Sincronizar arquivos (seguro)
         run: |
-          echo "Iniciando sincronização de código..."
-          # Coloque aqui seu script de sincronização
-          # Exemplo: cp -r /source/* ./
-          echo "sync_completed=true" >> $GITHUB_OUTPUT
+          # rsync é mais seguro que cp
+          # --exclude='.git' evita sobrescrever o histórico do repositório
+          # --exclude='.github/workflows/' evita erro de permissão do GITHUB_TOKEN
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='.github/workflows/' \
+            /tmp/source_repo/ ./
+          rm -rf /tmp/source_repo
 
-      - name: Check for changes
-        id: check
-        run: |
-          if git diff --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "Nenhuma alteração detectada"
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "Alterações detectadas"
-          fi
-
-      - name: Commit changes
-        if: steps.check.outputs.has_changes == 'true'
+      - name: 🔍 Verificar se há alterações
+        id: git-check
         run: |
           git add -A
-          git commit -m "${{ github.event.inputs.message }}" \
-            -m "Triggered by: ${{ github.actor }}" \
-            -m "Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          if git diff --staged --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "✅ Nenhuma alteração detectada."
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "🔄 Alterações detectadas!"
+          fi
 
-      - name: Push changes
-        if: steps.check.outputs.has_changes == 'true'
-        continue-on-error: true
-        id: push
+      - name: 💾 Commit e Push (só roda se houver mudanças)
+        if: steps.git-check.outputs.changes == 'true'
         run: |
-          git push origin ${{ github.ref }}
-          echo "push_status=success" >> $GITHUB_OUTPUT
-
-      - name: Handle push failure
-        if: failure() && steps.push.outcome == 'failure'
-        run: |
-          echo "❌ Erro ao fazer push: Verifique as permissões ou possíveis conflitos"
-          echo "Possíveis causas:"
-          echo "  - Falta de permissões: verify 'contents: write' permission"
-          echo "  - Conflito de merge: execute pull antes de sincronizar"
-          echo "  - Branch protegido: verifique as proteções da branch"
-          exit 1
-
-      - name: Sync completed
-        if: steps.check.outputs.has_changes == 'true' && steps.push.outcome == 'success'
-        run: |
-          echo "✅ Sincronização concluída com sucesso!"
-          echo "Commit enviado para: ${{ github.ref }}"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -am "🤖 Auto-sync: atualizado a partir do repositório de origem"
+          git push origin ${{ github.ref_name }}
