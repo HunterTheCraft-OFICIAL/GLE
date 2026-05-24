@@ -1,0 +1,78 @@
+name: Sync from Source
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Custom commit message'
+        required: false
+        default: 'Automated sync from source'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync code
+        id: sync
+        run: |
+          echo "Iniciando sincronização de código..."
+          # Coloque aqui seu script de sincronização
+          # Exemplo: cp -r /source/* ./
+          echo "sync_completed=true" >> $GITHUB_OUTPUT
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "Nenhuma alteração detectada"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Alterações detectadas"
+          fi
+
+      - name: Commit changes
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          git add -A
+          git commit -m "${{ github.event.inputs.message }}" \
+            -m "Triggered by: ${{ github.actor }}" \
+            -m "Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+      - name: Push changes
+        if: steps.check.outputs.has_changes == 'true'
+        continue-on-error: true
+        id: push
+        run: |
+          git push origin ${{ github.ref }}
+          echo "push_status=success" >> $GITHUB_OUTPUT
+
+      - name: Handle push failure
+        if: failure() && steps.push.outcome == 'failure'
+        run: |
+          echo "❌ Erro ao fazer push: Verifique as permissões ou possíveis conflitos"
+          echo "Possíveis causas:"
+          echo "  - Falta de permissões: verify 'contents: write' permission"
+          echo "  - Conflito de merge: execute pull antes de sincronizar"
+          echo "  - Branch protegido: verifique as proteções da branch"
+          exit 1
+
+      - name: Sync completed
+        if: steps.check.outputs.has_changes == 'true' && steps.push.outcome == 'success'
+        run: |
+          echo "✅ Sincronização concluída com sucesso!"
+          echo "Commit enviado para: ${{ github.ref }}"
