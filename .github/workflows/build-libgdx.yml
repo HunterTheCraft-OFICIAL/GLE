@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:  # Permite executar manualmente
+    inputs:
+      debug_mode:
+        description: 'Ativar upload de artefatos de debug (engine, content, shared)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   build:
@@ -23,24 +32,60 @@ jobs:
           cache: 'gradle'
 
       - name: 🔧 Grant execute permission for gradlew
-        run: chmod +x libgdx-kotlin-road-mvp/gradlew
+        run: chmod +x gradlew
 
       - name: 📦 Download Dependencies & Build
-        run: |
-          cd libgdx-kotlin-road-mvp
-          ./gradlew --no-daemon build
+        run: ./gradlew --no-daemon build
 
       - name: 🏗️ Build Desktop JAR
-        run: |
-          cd libgdx-kotlin-road-mvp
-          ./gradlew --no-daemon jar
+        run: ./gradlew --no-daemon jar
 
       - name: 📤 Upload Desktop JAR
         uses: actions/upload-artifact@v4
         with:
           name: road-mvp-desktop
-          path: libgdx-kotlin-road-mvp/build/libs/*.jar
+          path: build/libs/*.jar
           retention-days: 30
+
+      # --- Caixa de Inspeção (Debug Artifacts) ---
+      # Upload de pastas críticas apenas em caso de falha ou via trigger manual com debug
+      - name: 🕵️ Upload Engine Sources (Debug)
+        if: failure() || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_mode == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-engine-sources
+          path: src/commonMain/kotlin/engine/
+          retention-days: 5
+          if-no-files-found: ignore
+
+      - name: 🕵️ Upload Content Assets (Debug)
+        if: failure() || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_mode == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-content-assets
+          path: assets/
+          retention-days: 5
+          if-no-files-found: ignore
+
+      - name: 🕵️ Upload Shared Modules (Debug)
+        if: failure() || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_mode == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-shared-modules
+          path: src/commonMain/kotlin/shared/
+          retention-days: 5
+          if-no-files-found: ignore
+      
+      - name: 📋 Upload Full Build Logs (Debug)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-build-logs
+          path: |
+            build/reports/
+            build/test-results/
+          retention-days: 5
+          if-no-files-found: ignore
 
       - name: ✅ Build Summary
         run: |
@@ -51,4 +96,10 @@ jobs:
           echo "**Artifact:** road-mvp-desktop.jar" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Arquivos Gerados:" >> $GITHUB_STEP_SUMMARY
-          ls -lh libgdx-kotlin-road-mvp/build/libs/*.jar >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Nenhum JAR encontrado" >> $GITHUB_STEP_SUMMARY
+          ls -lh build/libs/*.jar >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Nenhum JAR encontrado" >> $GITHUB_STEP_SUMMARY
+          
+          # Adiciona nota sobre debug se aplicável
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.debug_mode }}" == "true" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Modo Debug Ativado:** Artefatos de inspeção gerados." >> $GITHUB_STEP_SUMMARY
+          fi
