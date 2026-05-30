@@ -34,6 +34,19 @@ jobs:
       - name: 🔧 Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: 🗑️ Remove 'analisar-remover' directory (Safety Clean)
+        run: |
+          if [ -d "analisar-remover" ]; then
+            echo "⚠️ Found 'analisar-remover' directory. Removing for safety..."
+            rm -rf analisar-remover
+            echo "✅ Directory removed successfully."
+          else
+            echo "ℹ️ 'analisar-remover' directory not found. Skipping removal."
+          fi
+
+      - name: 🧹 Clean Build Directory
+        run: ./gradlew --no-daemon clean
+
       - name: 📦 Download Dependencies & Build
         run: ./gradlew --no-daemon build
 
