@@ -64,8 +64,8 @@ Para gerar um JAR executável ou empacotar o jogo:
 
 O projeto segue a estrutura padrão do LibGDX separando o núcleo (`core`) da implementação específica da plataforma (`desktop`):
 
-1.  **`src/main/kotlin/.../core`**: Contém a lógica do jogo independente de plataforma (`RoadMVPGame`, `RoadScreen`, entidades).
-2.  **`src/main/kotlin/.../desktop`**: Contém o launcher específico para PC (`DesktopLauncher`), configurando a janela e o contexto OpenGL.
+1.  **`src/main/kotlin/io/hunterthecraft/gle/core`**: Contém a lógica do jogo independente de plataforma (`RoadMVPGame`, `RoadScreen`, entidades).
+2.  **`src/main/kotlin/io/hunterthecraft/gle/desktop`**: Contém o launcher específico para PC (`DesktopLauncher`), configurando a janela e o contexto OpenGL.
 
 ## 🔮 Próximos Passos (Roadmap)
 

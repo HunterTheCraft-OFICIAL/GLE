@@ -4,7 +4,7 @@ plugins {
     id("application")
 }
 
-group = "com.openttd.roadmvp"
+group = "io.hunterthecraft.gle"
 version = "0.1.0"
 
 repositories {
@@ -33,7 +33,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.openttd.roadmvp.desktop.DesktopLauncher")
+    mainClass.set("io.hunterthecraft.gle.desktop.DesktopLauncher")
 }
 
 tasks.withType<JavaCompile> {
@@ -48,7 +48,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "com.openttd.roadmvp.desktop.DesktopLauncher"
+        attributes["Main-Class"] = "io.hunterthecraft.gle.desktop.DesktopLauncher"
     }
     
     from({

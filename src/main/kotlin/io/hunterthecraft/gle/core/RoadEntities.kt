@@ -1,4 +1,4 @@
-package com.openttd.roadmvp.core
+package io.hunterthecraft.gle.core
 
 enum class RoadVehicleType {
     BUS,
@@ -14,18 +14,18 @@ class RoadVehicle(
     var direction: Float = 0f // em graus
 ) {
     private var distanceTraveled = 0f
-    
+
     fun update(delta: Float) {
         // Movimento simples para demonstração
         // No MVP completo, isso seguiria as estradas definidas
-        
+
         val movement = speed * delta
         distanceTraveled += movement
-        
+
         // Mover na direção atual
         x += kotlin.math.cos(Math.toRadians(direction.toDouble())).toFloat() * movement
         y += kotlin.math.sin(Math.toRadians(direction.toDouble())).toFloat() * movement
-        
+
         // Limites da tela - simples wrap-around para demonstração
         if (x > 1100f) x = -50f
         if (x < -50f) x = 1100f
