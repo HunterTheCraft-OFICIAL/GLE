@@ -1,0 +1,2 @@
+-keep class com.badlogicgames.** { *; }
+-keep class io.hunterthecraft.gle.** { *; }
