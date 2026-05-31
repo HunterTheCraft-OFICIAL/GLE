@@ -31,12 +31,6 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: 📊 Check Disk Space (Initial)
-        run: |
-          echo "=== DISK SPACE CHECK (Initial) ==="
-          df -h
-          echo "=============================="
-
       - name: 🔧 Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -53,20 +47,8 @@ jobs:
       - name: 🧹 Clean Build Directory
         run: ./gradlew --no-daemon clean
 
-      - name: 📊 Check Disk Space (After Clean)
-        run: |
-          echo "=== DISK SPACE CHECK (After Clean) ==="
-          df -h
-          echo "====================================="
-
       - name: 📦 Download Dependencies & Build
         run: ./gradlew --no-daemon build
-
-      - name: 📊 Check Disk Space (After Build)
-        run: |
-          echo "=== DISK SPACE CHECK (After Build) ==="
-          df -h
-          echo "====================================="
 
       - name: 🏗️ Build Desktop JAR
         run: ./gradlew --no-daemon desktop:jar
