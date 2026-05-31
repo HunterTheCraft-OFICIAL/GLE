@@ -51,13 +51,23 @@ jobs:
         run: ./gradlew --no-daemon build
 
       - name: 🏗️ Build Desktop JAR
-        run: ./gradlew --no-daemon jar
+        run: ./gradlew --no-daemon desktop:jar
 
       - name: 📤 Upload Desktop JAR
         uses: actions/upload-artifact@v4
         with:
           name: road-mvp-desktop
-          path: build/libs/*.jar
+          path: desktop/build/libs/*.jar
+          retention-days: 30
+
+      - name: 📱 Build Android APK (Debug)
+        run: ./gradlew --no-daemon android:assembleDebug
+
+      - name: 📤 Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: road-mvp-android-debug
+          path: android/build/outputs/apk/debug/*.apk
           retention-days: 30
 
       # --- Caixa de Inspeção (Debug Artifacts) ---
@@ -104,12 +114,16 @@ jobs:
         run: |
           echo "## 🎉 Build Concluído com Sucesso!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Projeto:** LibGDX Kotlin Road MVP" >> $GITHUB_STEP_SUMMARY
+          echo "**Projeto:** LibGDX Kotlin Road MVP (Multi-módulo)" >> $GITHUB_STEP_SUMMARY
           echo "**Java Version:** 17" >> $GITHUB_STEP_SUMMARY
-          echo "**Artifact:** road-mvp-desktop.jar" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifacts:** road-mvp-desktop.jar + road-mvp-android-debug.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Arquivos Gerados:" >> $GITHUB_STEP_SUMMARY
-          ls -lh build/libs/*.jar >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Nenhum JAR encontrado" >> $GITHUB_STEP_SUMMARY
+          echo "#### Desktop JAR:" >> $GITHUB_STEP_SUMMARY
+          ls -lh desktop/build/libs/*.jar >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Nenhum JAR encontrado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Android APK:" >> $GITHUB_STEP_SUMMARY
+          ls -lh android/build/outputs/apk/debug/*.apk >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Nenhum APK encontrado" >> $GITHUB_STEP_SUMMARY
           
           # Adiciona nota sobre debug se aplicável
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.debug_mode }}" == "true" ]; then
